@@ -19,3 +19,8 @@
 **Blockers / what I'm stuck on:** Designing the UI and layout for the website.
 
 **Plan for tomorrow:** Build the spend input form on the frontend and wire it up to the audit engine via the Express API.
+
+## Day 3 — 2026-05-08
+**Hours worked:** 0hrs
+
+**What I did:** Had final practical, Took a day off.
