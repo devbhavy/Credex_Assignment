@@ -23,4 +23,4 @@
 ## Day 3 — 2026-05-08
 **Hours worked:** 0hrs
 
-**What I did:** Had final practical, Took a day off.
+**What I did:** Had a final practical exam, Took a day off.
