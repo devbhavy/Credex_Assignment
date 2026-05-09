@@ -24,3 +24,14 @@
 **Hours worked:** 0hrs
 
 **What I did:** Had a final practical exam, Took a day off.
+
+## Day 4 — 2026-05-09
+**Hours worked:** 3.5hrs
+
+**What I did:** Extended the audit engine significantly. Added usageFrequency field per tool if a user frequently hits usage limits, the engine no longer suggests a downgrade at all.Added needsAdminControls to the audit input when true, the engine suggests the team plan equivalent with a clear breakdown of extra cost and features gained. Also connected the server to a postgres database using prisma.
+
+**What I learned:** Savings recommendations need to be contextual, the same plan downgrade can be completely wrong for one user and perfectly right for another depending on how heavily they use the tool. Also learned that team plans are never cheaper than individual plans, so they should only be recommended for feature reasons, not savings.
+
+**Blockers / what I'm stuck on:** Figuring out how to generate shareable link for the result of audit.
+
+**Plan for tomorrow:** Finish up the basic routes and start working on the frontend.
