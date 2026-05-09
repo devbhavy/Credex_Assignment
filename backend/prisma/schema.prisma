@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model audits {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  team_size            Int
+  use_case             String
+  tools                Json
+  recommendations      Json
+  redundancies         Json
+  total_monthly_saving Decimal   @db.Decimal(10, 2)
+  total_annual_saving  Decimal   @db.Decimal(10, 2)
+  is_already_optimal   Boolean?  @default(false)
+  summary              String?
+  created_at           DateTime? @default(now()) @db.Timestamptz(6)
+  share_token          String?   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  needs_admin_controls Boolean?  @default(false)
+  leads                leads[]
+
+  @@index([share_token], map: "idx_audits_share_token")
+}
+
+model leads {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  audit_id        String?   @db.Uuid
+  email           String
+  company         String?
+  role            String?
+  is_high_savings Boolean?  @default(false)
+  email_sent      Boolean?  @default(false)
+  created_at      DateTime? @default(now()) @db.Timestamptz(6)
+  audits          audits?   @relation(fields: [audit_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([audit_id], map: "idx_leads_audit_id")
+}

@@ -1,5 +1,6 @@
 import {OpenRouter} from "@openrouter/sdk"
 import dotenv from "dotenv"
+import type { AuditResult } from "./auditEngine.js";
 dotenv.config();
 
 const client = new OpenRouter({
@@ -7,26 +8,31 @@ const client = new OpenRouter({
 
 })
 
-// async function main(){
-//     const completion = await client.chat.send({
-//         chatRequest : {
-//             // model: 'tencent/hy3-preview:free',
-//             model : "openai/gpt-oss-120b:free",
-//             messages: [
-//             {
-//                 role: 'user',
-//                 content: 'difference between reflection and refraction answer briefly',
-//             },
-//             ]
-//         }
-//     });
-
-//     console.log(completion.choices[0]?.message.content)
-// }
-
-// main()
 
 
-export {client}
+async function generateAiSummary(input:AuditResult):Promise<string>{
+
+    const completion = await client.chat.send({
+        chatRequest : {
+            model : "openai/gpt-oss-120b:free",
+            messages: [
+            {
+                role: 'system',
+                content: 'provided all info generate a 100 words personalined summary paragraph based on the audit.If the reason states that pricing data is not available suggest manual review for that tool',
+            },
+            {
+                role : 'user',
+                content : `data : ${JSON.stringify(input)}`
+            }
+            ]
+        }
+    });
+
+    return completion.choices[0]?.message.content;
+}
+
+
+
+export {client,generateAiSummary}
 
 

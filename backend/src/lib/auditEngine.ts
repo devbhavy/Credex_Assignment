@@ -1,16 +1,19 @@
 export type UseCase = "coding" | "writing" | "research" | "data" | "mixed";
+export type UsageFrequency = "never" | "sometimes" | "frequently";
 
 export interface ToolInput {
   tool: string;
   plan: string;
   seats: number;
   monthlySpend: number;
+  usageFrequency: UsageFrequency;
 }
 
 export interface AuditInput {
   tools: ToolInput[];
   teamSize: number;
   useCase: UseCase;
+  needsAdminControls: boolean;
 }
 
 export interface ToolRecommendation {
@@ -23,7 +26,7 @@ export interface ToolRecommendation {
   monthlySaving: number;
   reason: string;
   isOptimal: boolean;
-  checkType: "plan_downsize" | "capability_warning" | "api_to_flat" | "optimal" | "unknown_tool" | "enterprise";
+  checkType: "plan_downsize" | "capability_warning" | "api_to_flat" | "use_case_mismatch" | "admin_controls_upgrade" | "optimal" | "unknown_tool" | "enterprise";
 }
 
 export interface RedundancyWarning {
@@ -40,6 +43,8 @@ export interface AuditResult {
   totalAnnualSaving: number;
   isAlreadyOptimal: boolean;
 }
+
+
 
 const PRICING: Record<string, Record<string, number>> = {
   cursor: {
@@ -85,7 +90,6 @@ const PRICING: Record<string, Record<string, number>> = {
     business: 100,
   },
 };
-
 
 
 const MAX_CAPABILITY_DROP = 1;
@@ -155,6 +159,50 @@ const PLAN_SEAT_RULES: Record<string, { plan: string; maxSeatsBeforeOverkill: nu
 };
 
 
+const TEAM_PLAN_MAP: Record<string, { individualPlan: string; teamPlan: string; teamFeatures: string }[]> = {
+  claude: [
+    {
+      individualPlan: "pro",
+      teamPlan: "team_standard",
+      teamFeatures: "centralized billing, higher usage limits, data not used for training",
+    },
+    {
+      individualPlan: "max_5x",
+      teamPlan: "team_premium",
+      teamFeatures: "centralized billing, admin dashboard, priority support",
+    },
+  ],
+  chatgpt: [
+    {
+      individualPlan: "plus",
+      teamPlan: "team",
+      teamFeatures: "centralized billing, admin console, higher message limits",
+    },
+  ],
+  cursor: [
+    {
+      individualPlan: "pro",
+      teamPlan: "teams",
+      teamFeatures: "centralized billing, usage analytics, team management",
+    },
+  ],
+  github_copilot: [
+    {
+      individualPlan: "pro",
+      teamPlan: "business",
+      teamFeatures: "centralized billing, policy controls, audit logs",
+    },
+  ],
+  v0: [
+    {
+      individualPlan: "premium",
+      teamPlan: "team",
+      teamFeatures: "centralized billing, shared projects, team management",
+    },
+  ],
+};
+
+
 
 const REDUNDANCY_GROUPS: { category: string; tools: string[] }[] = [
   {
@@ -176,10 +224,28 @@ const REDUNDANCY_GROUPS: { category: string; tools: string[] }[] = [
 ];
 
 
-
 const SKIP_PLANS = new Set(["enterprise", "custom"]);
 const FREE_PLANS = new Set(["hobby", "free", "pay_as_you_go"]);
 
+
+const TOOL_USE_CASE_FIT: Record<string, UseCase[]> = {
+  cursor:         ["coding"],
+  github_copilot: ["coding"],
+  v0:             ["coding"],
+  claude:         ["coding", "writing", "research", "data", "mixed"],
+  chatgpt:        ["coding", "writing", "research", "data", "mixed"],
+  gemini:         ["coding", "writing", "research", "data", "mixed"],
+  anthropic_api:  ["coding", "writing", "research", "data", "mixed"],
+  openai_api:     ["coding", "writing", "research", "data", "mixed"],
+};
+
+const USE_CASE_ALTERNATIVE: Record<UseCase, { tool: string; plan: string; reason: string }> = {
+  writing:  { tool: "claude",  plan: "pro",  reason: "Claude Pro is purpose-built for writing tasks at $20/seat." },
+  research: { tool: "claude",  plan: "pro",  reason: "Claude Pro handles research and long-form analysis at $20/seat." },
+  data:     { tool: "chatgpt", plan: "plus", reason: "ChatGPT Plus has strong data analysis and code interpreter at $20/seat." },
+  coding:   { tool: "cursor",  plan: "pro",  reason: "Cursor Pro is purpose-built for coding workflows at $20/seat." },
+  mixed:    { tool: "claude",  plan: "pro",  reason: "Claude Pro handles mixed use cases well at $20/seat." },
+};
 
 
 function getCapability(tool: string, plan: string): number | null {
@@ -197,13 +263,16 @@ function findBestDowngrade(
   tool: string,
   currentPlan: string,
   seats: number,
-  monthlySpend: number
+  monthlySpend: number,
+  usageFrequency: UsageFrequency
 ): { plan: string; pricePerSeat: number; capabilityDrop: number } | null {
   const plans = PRICING[tool];
   if (!plans) return null;
 
   const currentPrice = plans[currentPlan];
   if (currentPrice === undefined) return null;
+
+  if (usageFrequency === "frequently") return null;
 
   const isPaying = monthlySpend > 0;
   const rules = PLAN_SEAT_RULES[tool] ?? [];
@@ -214,18 +283,18 @@ function findBestDowngrade(
     if (plan === currentPlan) continue;
     if (SKIP_PLANS.has(plan)) continue;
 
-
     if (isPaying && FREE_PLANS.has(plan)) continue;
 
     if (seats > 1 && price === 0) continue;
 
-  
     if (price >= currentPrice) continue;
 
     const rule = rules.find((r) => r.plan === plan);
     if (rule && seats > rule.maxSeatsBeforeOverkill) continue;
 
     const capabilityDrop = getCapabilityDrop(tool, currentPlan, plan);
+
+    if (usageFrequency === "sometimes" && capabilityDrop > 0) continue;
 
     if (!best || price < best.pricePerSeat) {
       best = { plan, pricePerSeat: price, capabilityDrop };
@@ -235,9 +304,8 @@ function findBestDowngrade(
   return best;
 }
 
-
 function checkPlanDownsize(input: ToolInput): ToolRecommendation | null {
-  const { tool, plan, seats, monthlySpend } = input;
+  const { tool, plan, seats, monthlySpend, usageFrequency } = input;
 
   const plans = PRICING[tool];
   if (!plans) return null;
@@ -246,7 +314,7 @@ function checkPlanDownsize(input: ToolInput): ToolRecommendation | null {
   const planPrice = plans[plan] ?? monthlySpend / Math.max(seats, 1);
   const calculatedSpend = planPrice * seats;
 
-  const best = findBestDowngrade(tool, plan, seats, monthlySpend);
+  const best = findBestDowngrade(tool, plan, seats, monthlySpend, usageFrequency);
   if (!best) return null;
 
   const newSpend = best.pricePerSeat * seats;
@@ -260,7 +328,12 @@ function checkPlanDownsize(input: ToolInput): ToolRecommendation | null {
       ? ` Capability: ${currentScore}/10 → ${recommendedScore}/10 (drop of ${best.capabilityDrop} point${best.capabilityDrop !== 1 ? "s" : ""}).`
       : "";
 
- 
+  const usageNote = usageFrequency === "never"
+    ? " You reported never hitting usage limits, so this downgrade carries low risk."
+    : usageFrequency === "sometimes"
+    ? " You reported sometimes hitting limits -- only a same-capability plan is suggested."
+    : "";
+
   if (best.capabilityDrop > MAX_CAPABILITY_DROP) {
     return {
       tool,
@@ -270,13 +343,11 @@ function checkPlanDownsize(input: ToolInput): ToolRecommendation | null {
       recommendedTool: tool,
       recommendedSpend: newSpend,
       monthlySaving: saving,
-      reason: `${tool} ${best.plan} ($${best.pricePerSeat}/seat) would save $${saving}/mo vs ${plan} ($${planPrice}/seat), but involves a ${best.capabilityDrop}-point capability drop (${currentScore}/10 → ${recommendedScore}/10).${capabilityNote} Only switch if your team doesn't rely on the higher-tier features.`,
+      reason: `${tool} ${best.plan} ($${best.pricePerSeat}/seat) would save $${saving}/mo vs ${plan} ($${planPrice}/seat), but involves a ${best.capabilityDrop}-point capability drop (${currentScore}/10 to ${recommendedScore}/10).${capabilityNote} Only switch if your team does not rely on the higher-tier features.${usageNote}`,
       isOptimal: false,
       checkType: "capability_warning",
     };
   }
-
- 
   return {
     tool,
     currentPlan: plan,
@@ -285,7 +356,7 @@ function checkPlanDownsize(input: ToolInput): ToolRecommendation | null {
     recommendedTool: tool,
     recommendedSpend: newSpend,
     monthlySaving: saving,
-    reason: `${seats} seat(s) on ${plan} ($${planPrice}/seat) = $${calculatedSpend}/mo. Downgrade to ${best.plan} ($${best.pricePerSeat}/seat) = $${newSpend}/mo.${capabilityNote} Same vendor, minimal capability difference — saves $${saving}/mo ($${saving * 12}/yr).`,
+    reason: `${seats} seat(s) on ${plan} ($${planPrice}/seat) = $${calculatedSpend}/mo. Downgrade to ${best.plan} ($${best.pricePerSeat}/seat) = $${newSpend}/mo.${capabilityNote} Same vendor, minimal capability difference -- saves $${saving}/mo ($${saving * 12}/yr).${usageNote}`,
     isOptimal: false,
     checkType: "plan_downsize",
   };
@@ -293,7 +364,7 @@ function checkPlanDownsize(input: ToolInput): ToolRecommendation | null {
 
 
 function checkApiToFlat(input: ToolInput): ToolRecommendation | null {
-  const { tool, plan, seats, monthlySpend } = input;
+  const { tool, plan, seats, monthlySpend, usageFrequency } = input;
 
   if (tool !== "anthropic_api" && tool !== "openai_api") return null;
 
@@ -344,15 +415,14 @@ function checkApiToFlat(input: ToolInput): ToolRecommendation | null {
   return null;
 }
 
-
 function getPrimaryScore(input: ToolInput): number {
   const capScore = getCapability(input.tool, input.plan) ?? 5;
   const spendPerSeat = input.monthlySpend / Math.max(input.seats, 1);
 
   return (
-    input.seats * 2 +       
+    input.seats * 2 +   
     spendPerSeat * 0.5 +    
-    capScore                 
+    capScore                
   );
 }
 
@@ -395,8 +465,86 @@ function checkRedundancies(inputs: ToolInput[]): RedundancyWarning[] {
   return warnings;
 }
 
-function auditSingleTool(input: ToolInput): ToolRecommendation {
+function getBestPlanForSeats(tool: string, seats: number): string {
+  const rules = PLAN_SEAT_RULES[tool] ?? [];
+  const toolPricing = PRICING[tool] ?? {};
+
+  const fitting = rules
+    .filter((r) => seats <= r.maxSeatsBeforeOverkill)
+    .filter((r) => toolPricing[r.plan] !== undefined)
+    .sort((a, b) => (toolPricing[a.plan] ?? 0) - (toolPricing[b.plan] ?? 0));
+
+  return fitting[0]?.plan ?? "pro";
+}
+
+function checkUseCaseMismatch(input: ToolInput, useCase: UseCase): ToolRecommendation | null {
   const { tool, plan, seats, monthlySpend } = input;
+
+  const fitUseCases = TOOL_USE_CASE_FIT[tool];
+  if (!fitUseCases) return null;
+
+  if (fitUseCases.includes(useCase)) return null;
+
+  const alternative = USE_CASE_ALTERNATIVE[useCase];
+
+  const bestPlan = getBestPlanForSeats(alternative.tool, seats);
+  const altPrice = PRICING[alternative.tool]?.[bestPlan] ?? 0;
+  const altSpend = altPrice * seats;
+  const saving = monthlySpend - altSpend;
+
+  const seatNote = seats > 4
+    ? alternative.tool + " " + bestPlan + " is the right plan for " + seats + " seats at $" + altPrice + "/seat/mo = $" + altSpend + "/mo."
+    : alternative.tool + " " + bestPlan + " at $" + altPrice + "/seat/mo = $" + altSpend + "/mo for " + seats + " seat(s).";
+
+  return {
+    tool,
+    currentPlan: plan,
+    currentSpend: monthlySpend,
+    recommendedTool: alternative.tool,
+    recommendedPlan: bestPlan,
+    recommendedSpend: altSpend,
+    monthlySaving: Math.max(saving, 0),
+    reason: tool + " is built for coding workflows, not " + useCase + ". " + seatNote + (saving > 0 ? " Switching saves $" + saving + "/mo ($" + (saving * 12) + "/yr)." : " Cost is similar but the tool is a much better fit for your use case."),
+    isOptimal: false,
+    checkType: "use_case_mismatch",
+  };
+}
+
+function checkAdminControls(input: ToolInput, needsAdminControls: boolean): ToolRecommendation | null {
+  if (!needsAdminControls) return null;
+
+  const { tool, plan, seats, monthlySpend } = input;
+
+  const teamPlanOptions = TEAM_PLAN_MAP[tool];
+  if (!teamPlanOptions) return null;
+
+  const match = teamPlanOptions.find((t) => t.individualPlan === plan);
+  if (!match) return null;
+
+  const teamPrice = PRICING[tool]?.[match.teamPlan];
+  if (teamPrice === undefined) return null;
+
+  const currentPrice = PRICING[tool]?.[plan] ?? monthlySpend / Math.max(seats, 1);
+  const teamSpend = teamPrice * seats;
+  const extraCost = teamSpend - (currentPrice * seats);
+
+  return {
+    tool,
+    currentPlan: plan,
+    currentSpend: monthlySpend,
+    recommendedPlan: match.teamPlan,
+    recommendedTool: tool,
+    recommendedSpend: teamSpend,
+    monthlySaving: 0, 
+    reason: "You need admin controls and centralized billing. " + tool + " " + match.teamPlan + " adds: " + match.teamFeatures + ". Cost: $" + teamPrice + "/seat vs $" + currentPrice + "/seat — extra $" + extraCost + "/mo ($" + (extraCost * 12) + "/yr) for " + seats + " seat(s). This is a feature upgrade, not a savings recommendation.",
+    isOptimal: false,
+    checkType: "admin_controls_upgrade",
+  };
+}
+
+
+function auditSingleTool(input: ToolInput, useCase: UseCase, needsAdminControls: boolean): ToolRecommendation {
+  const { tool, plan, seats, monthlySpend, usageFrequency } = input;
 
   if (!PRICING[tool]) {
     return {
@@ -428,6 +576,12 @@ function auditSingleTool(input: ToolInput): ToolRecommendation {
     };
   }
 
+  const mismatchCheck = checkUseCaseMismatch(input, useCase);
+  if (mismatchCheck) return mismatchCheck;
+
+  const adminCheck = checkAdminControls(input, needsAdminControls);
+  if (adminCheck) return adminCheck;
+
   const apiCheck = checkApiToFlat(input);
   if (apiCheck) return apiCheck;
 
@@ -451,7 +605,7 @@ function auditSingleTool(input: ToolInput): ToolRecommendation {
 }
 
 export function runAudit(input: AuditInput): AuditResult {
-  const recommendations = input.tools.map((t) => auditSingleTool(t));
+  const recommendations = input.tools.map((t) => auditSingleTool(t, input.useCase, input.needsAdminControls));
   const redundancies = checkRedundancies(input.tools);
 
   const totalMonthlySaving = recommendations.reduce((sum, r) => sum + r.monthlySaving, 0);
@@ -467,14 +621,3 @@ export function runAudit(input: AuditInput): AuditResult {
     isAlreadyOptimal,
   };
 }
-
-// const input: AuditInput = {
-//     tools: [
-//       { tool: "anthropic_api", plan: "pay_as_you_go", seats: 2, monthlySpend: 180 }
-//     ],
-//     teamSize: 2,
-//     useCase: "research"
-//   }
-
-
-// console.log(runAudit(input))
