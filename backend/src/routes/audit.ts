@@ -36,27 +36,6 @@ auditRouter.post("/create",async function(req,res){
     }
 })
 
-auditRouter.get("/:id",async function(req,res){
-    const auditId = req.params.id;
-    try{
-        const response = await prisma.audits.findUnique({
-           where : {
-            id : auditId
-           }
-        });
-        if(response==null){
-            return res.status(200).json({msg : "no audit data for for the given id!"})
-        }else{
-            return res.status(200).json(response)
-        }
-        
-    }catch(err){
-        return res.status(300).json({
-            msg : "some error occurred while fetching from the database!"
-        })
-    }
-    
-})
 
 auditRouter.get("/:shareToken/public",async function(req,res){
     const shareToken = req.params.shareToken;
@@ -80,6 +59,30 @@ auditRouter.get("/:shareToken/public",async function(req,res){
 
 
 })
+
+
+auditRouter.get("/:id",async function(req,res){
+    const auditId = req.params.id;
+    try{
+        const response = await prisma.audits.findUnique({
+           where : {
+            id : auditId
+           }
+        });
+        if(response==null){
+            return res.status(404).json({msg : "no audit data for for the given id!"})
+        }else{
+            return res.status(200).json(response)
+        }
+        
+    }catch(err){
+        return res.status(500).json({
+            msg : "some error occurred while fetching from the database!"
+        })
+    }
+    
+})
+
 
 
 
