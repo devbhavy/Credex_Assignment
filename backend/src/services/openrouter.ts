@@ -1,6 +1,7 @@
 import {OpenRouter} from "@openrouter/sdk"
 import dotenv from "dotenv"
-import type { AuditResult } from "./auditEngine.js";
+// import type { AuditResult } from "./auditEngine.js";
+import type { AuditResult } from "../lib/auditEngine.js";
 dotenv.config();
 
 const client = new OpenRouter({

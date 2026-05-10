@@ -19,11 +19,9 @@ model audits {
   is_already_optimal   Boolean?  @default(false)
   summary              String?
   created_at           DateTime? @default(now()) @db.Timestamptz(6)
-  share_token          String?   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  share_token          String?   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   needs_admin_controls Boolean?  @default(false)
   leads                leads[]
-
-  @@index([share_token], map: "idx_audits_share_token")
 }
 
 model leads {

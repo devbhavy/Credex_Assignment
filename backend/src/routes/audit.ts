@@ -1,7 +1,7 @@
 import express from "express"
 import { runAudit, type AuditInput } from "../lib/auditEngine.js";
-import { generateAiSummary } from "../lib/openrouter.js";
-import { prisma } from "../lib/prisma.js";
+import { generateAiSummary } from "../services/openrouter.js";
+import { prisma } from "../services/prisma.js";
 const auditRouter = express.Router();
 
 
@@ -15,7 +15,7 @@ auditRouter.post("/create",async function(req,res){
 
     try{
         const aiResponse = await generateAiSummary(response);
-        await prisma.audits.create({
+        const audit = await prisma.audits.create({
             data : {
                 team_size : body.teamSize,
                 use_case : body.useCase,
@@ -29,18 +29,55 @@ auditRouter.post("/create",async function(req,res){
                 needs_admin_controls : body.needsAdminControls
             }
         });
-        res.status(200).json({...response,summary : aiResponse});
+        res.status(200).json({...response,summary : aiResponse,auditId : audit.id});
     } catch (err) {
         console.log(err);
         res.status(500).json({ error: "Internal server error" });
     }
 })
 
-auditRouter.get("/:id",function(req,res){
+auditRouter.get("/:id",async function(req,res){
+    const auditId = req.params.id;
+    try{
+        const response = await prisma.audits.findUnique({
+           where : {
+            id : auditId
+           }
+        });
+        if(response==null){
+            return res.status(200).json({msg : "no audit data for for the given id!"})
+        }else{
+            return res.status(200).json(response)
+        }
+        
+    }catch(err){
+        return res.status(300).json({
+            msg : "some error occurred while fetching from the database!"
+        })
+    }
     
 })
 
-auditRouter.get("/:id/public",function(req,res){
+auditRouter.get("/:shareToken/public",async function(req,res){
+    const shareToken = req.params.shareToken;
+    try{
+        const audit = await prisma.audits.findUnique({
+           where : {
+            share_token : shareToken
+           }
+        });
+        if(audit==null){
+            return res.status(200).json({msg : "no audit data for for the given id!"})
+        }
+        const { id: _id, share_token: _shareToken, ...publicAudit } = audit;
+        return res.status(200).json(publicAudit)
+        
+    }catch(err){
+        return res.status(300).json({
+            msg : "some error occurred while fetching from the database!"
+        })
+    }
+
 
 })
 
