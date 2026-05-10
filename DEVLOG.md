@@ -35,3 +35,14 @@
 **Blockers / what I'm stuck on:** Figuring out how to generate shareable link for the result of audit.
 
 **Plan for tomorrow:** Finish up the basic routes and start working on the frontend.
+
+## Day 5 — 2026-05-10
+**Hours worked:** 4hrs
+
+**What I did:** Started building the frontend. Set up React Router with three routes landing page, audit form, and results page. Built the AddTool modal component with a dynamic plan dropdown that auto-populates based on the selected tool. Monthly spend is now auto-calculated from seats × price per seat instead of manual input API tools (Anthropic API, OpenAI API) are the only exception since they're pay-per-token. Also finalized the backend audit routes fixed a route ordering conflict where /:id was intercepting /:shareToken/public requests, fixed incorrect 404 responses returning 200, and fixed 300 status codes to proper 500s.
+
+**What I learned:** Express route ordering matters — more specific routes must be defined before dynamic ones otherwise they never get reached.
+
+**Blockers / what I'm stuck on:** ToolCard component and the full form page still need to be built. Results page design not started yet.
+
+**Plan for tomorrow:** Build ToolCard, complete the CreateAudit form with team size and use case fields, wire up the submit to the backend, and start the results page.
