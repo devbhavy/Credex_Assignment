@@ -197,9 +197,8 @@ export function AddTool({ setVisibility, onAdd }: AddToolProps) {
           />
         </div>
 
-        {/* Monthly Spend */}
         {isApiTool ? (
-          // API tools — manual input since price is per token
+
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">
               Avg Monthly Spend ($)
