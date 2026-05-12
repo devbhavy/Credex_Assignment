@@ -1,8 +1,9 @@
-import { useState } from "react"
+import { useState, type ChangeEvent, type FormEvent } from "react"
 import { ToolCard } from "../components/card/ToolCard";
 import { AddTool } from "../components/AddTool";
 import axios from "axios";
 import { useNavigate } from "react-router";
+import { CloseButton } from "../components/button/CloseButton";
 
 export interface toolType {
   tool: string;
@@ -36,7 +37,7 @@ export default function CreateAudit() {
     setInput((prev) => [...prev, entry]);
   };
 
-  async function handleSubmit(e){
+  async function handleSubmit(e: FormEvent<HTMLFormElement>){
     e.preventDefault();
     const auditInput ={...additionalInfo,tools:input}
     console.log(auditInput);
@@ -45,25 +46,18 @@ export default function CreateAudit() {
       navigate(`/audit/${response.data.auditId}?new=true`,{
         replace : true
       })
-
-      
-      
     }catch(err){
       alert("failed to generate audit some error occurred!")
-
     }
-
-
   }
 
-
-  function handleAdditionalInfoChange(e: any) {
+  function handleAdditionalInfoChange(e: ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
-    
+
     let parsed: string | number | boolean = value;
     if (name === "teamSize") parsed = Number(value);
     if (name === "needsAdminControls") parsed = value === "true";
-  
+
     setAdditonalInfo({
       ...additionalInfo,
       [name]: parsed
@@ -71,79 +65,165 @@ export default function CreateAudit() {
   }
 
   return (
-    <div>
-      <div>welcome to create audit page!!!! hello</div>
+    <div className="mx-auto max-w-2xl px-5 py-12 pb-24">
 
-      <div>
-        <button onClick={() => setVisibility(true)}>
-          Click to add a new Tool
-        </button>
-      </div>
+      
+      <CloseButton/>
 
-      {visibility && (
-        <AddTool setVisibility={setVisibility} onAdd={onAdd} />
-      )}
+      <header className="mb-10">
+        <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+          New audit
+        </h1>
+        <p className="mt-2 max-w-lg text-muted leading-relaxed">
+          Add the AI tools your team pays for, then tell us how you work—we&apos;ll build the picture.
+        </p>
+      </header>
 
-      <div className="border-2 min-h-10 min-w-2xl w-2xl p-3 gap-y-3 flex flex-col">
-        {input.length === 0
-          ? <div>Your tools are displayed here</div>
-          : input.map((data, index) => (
+      <section className="mb-10 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-ink">Tools</h2>
+            <p className="mt-1 text-sm text-muted">
+              {input.length === 0
+                ? "No tools yet—add what you use today."
+                : `${input.length} tool${input.length === 1 ? "" : "s"} listed.`}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setVisibility(true)}
+            className="shrink-0 rounded-full border border-border bg-mint/80 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-mint"
+          >
+            Add a tool
+          </button>
+        </div>
+
+        {visibility && (
+          <AddTool setVisibility={setVisibility} onAdd={onAdd} />
+        )}
+
+        <div className="mt-6 flex min-h-16 flex-col gap-3 rounded-xl border border-dashed border-border/80 bg-canvas/50 p-4">
+          {input.length === 0 ? (
+            <p className="self-center py-6 text-center text-sm text-muted">
+              Your tools will appear here as cards.
+            </p>
+          ) : (
+            input.map((data, index) => (
               <div key={index}>
                 <ToolCard {...data} />
               </div>
             ))
-        }
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        <div>
-          <div>UseCase:</div>
-          <label>
-            <input type="radio" name="useCase" onChange={handleAdditionalInfoChange} value="coding"></input>
-            coding
-          </label>
-          <label>
-            <input type="radio" name="useCase" onChange={handleAdditionalInfoChange} value="writing"></input>
-            writing
-          </label>
-          <label>
-            <input type="radio" name="useCase" onChange={handleAdditionalInfoChange} value="research"></input>
-            reasearch
-          </label>
-          <label>
-            <input type="radio" name="useCase" onChange={handleAdditionalInfoChange} value="data"></input>
-            data
-          </label>
-          <label>
-            <input type="radio" name="useCase" onChange={handleAdditionalInfoChange} value="mixed"></input>
-            mixed
-          </label>
+          )}
         </div>
-        <div>
-          <div>needs admin controls?</div>
-          <label>
-            <input type="radio" name="needsAdminControls" onChange={handleAdditionalInfoChange} value="true"></input>
-            yes
-          </label>
-          <label>
-            <input type="radio" name="needsAdminControls" onChange={handleAdditionalInfoChange} value="false"></input>
-            no
-          </label>
+      </section>
 
-        </div>
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-8 rounded-2xl border border-border bg-surface-raised p-6 shadow-sm"
+      >
         <div>
-          <div>team size</div>
-          <input type="number" name="teamSize" min={1} max={100} onChange={handleAdditionalInfoChange} value={additionalInfo.teamSize}></input>
-
-        </div>
-        <div>
-          <button type="submit">Submit</button>
+          <h2 className="text-sm font-semibold text-ink">Use case</h2>
+          <p className="mt-1 text-sm text-muted">What best describes the team?</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {(
+              [
+                ["coding", "Coding"],
+                ["writing", "Writing"],
+                ["research", "Research"],
+                ["data", "Data"],
+                ["mixed", "Mixed"],
+              ] as const
+            ).map(([value, label]) => (
+              <label
+                key={value}
+                className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm transition-colors ${
+                  additionalInfo.useCase === value
+                    ? "border-accent bg-accent-muted text-ink"
+                    : "border-border bg-canvas text-muted hover:border-accent/50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="useCase"
+                  className="sr-only"
+                  onChange={handleAdditionalInfoChange}
+                  value={value}
+                  checked={additionalInfo.useCase === value}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
         </div>
 
+        <div>
+          <h2 className="text-sm font-semibold text-ink">Admin controls</h2>
+          <p className="mt-1 text-sm text-muted">Do you need enterprise-style controls?</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <label
+              className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm transition-colors ${
+                additionalInfo.needsAdminControls === true
+                  ? "border-accent bg-accent-muted text-ink"
+                  : "border-border bg-canvas text-muted hover:border-accent/50"
+              }`}
+            >
+              <input
+                type="radio"
+                name="needsAdminControls"
+                className="sr-only"
+                onChange={handleAdditionalInfoChange}
+                value="true"
+                checked={additionalInfo.needsAdminControls === true}
+              />
+              Yes
+            </label>
+            <label
+              className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm transition-colors ${
+                additionalInfo.needsAdminControls === false
+                  ? "border-accent bg-accent-muted text-ink"
+                  : "border-border bg-canvas text-muted hover:border-accent/50"
+              }`}
+            >
+              <input
+                type="radio"
+                name="needsAdminControls"
+                className="sr-only"
+                onChange={handleAdditionalInfoChange}
+                value="false"
+                checked={additionalInfo.needsAdminControls === false}
+              />
+              No
+            </label>
+          </div>
+        </div>
 
+        <div>
+          <label htmlFor="teamSize" className="text-sm font-semibold text-ink">
+            Team size
+          </label>
+          <p className="mt-1 text-sm text-muted">Rough headcount using these tools.</p>
+          <input
+            id="teamSize"
+            type="number"
+            name="teamSize"
+            min={1}
+            max={100}
+            onChange={handleAdditionalInfoChange}
+            value={additionalInfo.teamSize}
+            placeholder="e.g. 12"
+            className="mt-3 w-full max-w-xs rounded-xl border border-border bg-canvas px-4 py-3 text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          />
+        </div>
 
+        <div className="pt-2">
+          <button
+            type="submit"
+            className="w-full rounded-full bg-accent py-3.5 text-sm font-semibold text-ink shadow-sm transition-colors hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:w-auto sm:px-10"
+          >
+            Generate audit
+          </button>
+        </div>
       </form>
-      
     </div>
   );
 }

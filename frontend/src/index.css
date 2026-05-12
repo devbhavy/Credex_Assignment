@@ -1,1 +1,34 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-canvas: #f6f3ef;
+  --color-surface: #fffcfa;
+  --color-surface-raised: #ffffff;
+  --color-ink: #3a3f4a;
+  --color-muted: #8b919d;
+  --color-border: #e8e3dc;
+  --color-accent: #9ec9dd;
+  --color-accent-hover: #8abbd4;
+  --color-accent-muted: #d5eaf3;
+  --color-blush: #f3dfe6;
+  --color-mint: #d8eee5;
+  --color-lavender: #e6e2f4;
+  --color-peach: #fce8dd;
+  --color-overlay: rgb(58 63 74 / 0.25);
+}
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply m-0 min-h-screen bg-canvas font-sans text-ink antialiased;
+  }
+
+  ::selection {
+    @apply bg-accent-muted text-ink;
+  }
+}

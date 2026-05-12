@@ -5,13 +5,15 @@ import ViewAudit from "./pages/ViewAudit"
 
 
 export default function App() {
-  return(
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Landing/>}></Route>
-        <Route path="/audit/create" element={<CreateAudit/>}></Route>
-        <Route path="/audit/:token" element={<ViewAudit/>}></Route>
-      </Routes>
-    </BrowserRouter>
+  return (
+    <div className="min-h-screen bg-canvas">
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/audit/create" element={<CreateAudit />} />
+          <Route path="/audit/:token" element={<ViewAudit />} />
+        </Routes>
+      </BrowserRouter>
+    </div>
   )
 }

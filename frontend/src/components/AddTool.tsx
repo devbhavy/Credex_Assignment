@@ -138,15 +138,17 @@ export function AddTool({ setVisibility, onAdd }: AddToolProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-6 w-full max-w-md flex flex-col gap-4">
+    <div className="fixed inset-0 z-10 flex items-center justify-center bg-overlay backdrop-blur-sm">
+      <div className="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-border bg-surface-raised p-6 shadow-xl">
 
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Add AI Tool</h2>
+          <h2 className="text-lg font-semibold text-ink">Add AI tool</h2>
           <button
+            type="button"
             onClick={() => setVisibility(false)}
-            className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+            className="rounded-full border border-border px-2.5 py-1 text-lg leading-none text-muted transition-colors hover:bg-canvas hover:text-ink"
+            aria-label="Close"
           >
             ✕
           </button>
@@ -154,11 +156,11 @@ export function AddTool({ setVisibility, onAdd }: AddToolProps) {
 
         {/* Tool Select */}
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Tool</label>
+          <label className="text-sm font-medium text-ink">Tool</label>
           <select
             value={selectedTool}
             onChange={(e) => handleToolChange(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-black"
+            className="rounded-xl border border-border bg-canvas px-3 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
           >
             <option value="">Select a tool...</option>
             {Object.entries(TOOL_LABELS).map(([value, label]) => (
@@ -169,12 +171,12 @@ export function AddTool({ setVisibility, onAdd }: AddToolProps) {
 
         {/* Plan Select */}
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Plan</label>
+          <label className="text-sm font-medium text-ink">Plan</label>
           <select
             value={selectedPlan}
             onChange={(e) => setSelectedPlan(e.target.value)}
             disabled={!selectedTool}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-black disabled:opacity-40 disabled:cursor-not-allowed"
+            className="rounded-xl border border-border bg-canvas px-3 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-45"
           >
             <option value="">
               {selectedTool ? "Select a plan..." : "Select a tool first"}
@@ -187,21 +189,21 @@ export function AddTool({ setVisibility, onAdd }: AddToolProps) {
 
         {/* Seats */}
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Seats</label>
+          <label className="text-sm font-medium text-ink">Seats</label>
           <input
             type="number"
             min={1}
             value={seats}
             onChange={(e) => setSeats(Number(e.target.value))}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-black"
+            className="rounded-xl border border-border bg-canvas px-3 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
           />
         </div>
 
         {isApiTool ? (
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">
-              Avg Monthly Spend ($)
+            <label className="text-sm font-medium text-ink">
+              Avg monthly spend ($)
             </label>
             <input
               type="number"
@@ -209,20 +211,20 @@ export function AddTool({ setVisibility, onAdd }: AddToolProps) {
               value={apiSpend}
               onChange={(e) => setApiSpend(Number(e.target.value))}
               placeholder="Your average monthly API bill"
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-black"
+              className="rounded-xl border border-border bg-canvas px-3 py-2.5 text-sm text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted">
               Pay-as-you-go pricing — enter your actual monthly bill
             </p>
           </div>
         ) : (
           // Fixed price tools — auto calculated, read only
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Monthly Spend</label>
-            <div className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-900 flex items-center justify-between">
+            <label className="text-sm font-medium text-ink">Monthly spend</label>
+            <div className="flex items-center justify-between rounded-xl border border-border bg-accent-muted/50 px-3 py-2.5 text-sm text-ink">
               <span className="font-medium">${calculatedSpend.toFixed(2)}/mo</span>
               {selectedPlan && (
-                <span className="text-gray-400 text-xs">
+                <span className="text-xs text-muted">
                   ${pricePerSeat} × {seats} seat{seats > 1 ? "s" : ""}
                 </span>
               )}
@@ -232,18 +234,19 @@ export function AddTool({ setVisibility, onAdd }: AddToolProps) {
 
         {/* Usage Frequency */}
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-sm font-medium text-ink">
             How often does your team hit usage limits?
           </label>
           <div className="grid grid-cols-3 gap-2">
             {(["never", "sometimes", "frequently"] as const).map((f) => (
               <button
+                type="button"
                 key={f}
                 onClick={() => setUsageFrequency(f)}
-                className={`py-2 rounded-lg text-sm font-medium border transition-all capitalize
+                className={`rounded-xl border py-2 text-sm font-medium capitalize transition-colors
                   ${usageFrequency === f
-                    ? "bg-black text-white border-black"
-                    : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
+                    ? "border-accent bg-accent text-ink shadow-sm"
+                    : "border-border bg-canvas text-muted hover:border-accent/60 hover:text-ink"
                   }`}
               >
                 {f}
@@ -253,19 +256,21 @@ export function AddTool({ setVisibility, onAdd }: AddToolProps) {
         </div>
 
         {/* Error */}
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error && <p className="text-sm text-rose-400">{error}</p>}
 
         {/* Actions */}
         <div className="flex gap-2 pt-1">
           <button
+            type="button"
             onClick={handleAdd}
-            className="flex-1 bg-black text-white rounded-lg py-2 text-sm font-medium hover:bg-gray-800 transition-colors"
+            className="flex-1 rounded-xl bg-accent py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-accent-hover"
           >
-            Add Tool
+            Add tool
           </button>
           <button
+            type="button"
             onClick={() => setVisibility(false)}
-            className="flex-1 border border-gray-300 text-gray-700 rounded-lg py-2 text-sm font-medium hover:bg-gray-50 transition-colors"
+            className="flex-1 rounded-xl border border-border bg-canvas py-2.5 text-sm font-medium text-muted transition-colors hover:bg-blush/40 hover:text-ink"
           >
             Cancel
           </button>
