@@ -46,3 +46,27 @@
 **Blockers / what I'm stuck on:** ToolCard component and the full form page still need to be built. Results page design not started yet.
 
 **Plan for tomorrow:** Build ToolCard, complete the CreateAudit form with team size and use case fields, wire up the submit to the backend, and start the results page.
+
+## Day 6 — 2026-05-11
+**Hours worked:** 2hrs
+
+**What I did:** Worked on the Frontend. Completed a basic working blueprint for the create audit page.
+
+**What I learned:** Revised how to take proper input using form element while building a website.
+
+**Blockers / what I'm stuck on:** Figuiring out to properly send emails to the leads and designing a simplitic and modern ui for the website
+
+**Plan for tomorrow:** Finish a basic working prototype for the website
+
+
+## Day 7 — 2026-05-12
+
+**Hours worked:** 4hrs
+
+**What I did:** Built the audit results page frontend and connected it to the backend API. Added recommendation and redundancy cards with parsed JSON rendering instead of raw strings. Implemented public/private audit fetching using share tokens and query params. Added copy-share-link functionality with clipboard support and a success tooltip dialog. Integrated the email capture flow using the AddLead modal and set up transactional email sending with Brevo SMTP after debugging authentication issues. Fixed multiple frontend state and routing issues, improved loading/error handling, and cleaned up UI styling across the results page.
+
+**What I learned:** Learned about email handling services like Brevo and Resend and how to properly send emails using there apis.
+
+**Blockers / what I'm stuck on:** Need to polish responsive styling on smaller screens and improve the audit summary formatting. Email delivery works now, but production-grade deliverability/domain setup is still pending.
+
+**Plan for tomorrow:** Finish responsive UI polish, improve landing page visuals, add validation/error states across forms, and prepare the project for deployment.

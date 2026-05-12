@@ -22,7 +22,7 @@ interface PropType {
 
 export async function sendConfirmationEmail(props: PropType) {
     try {
-        const auditLink = `http://localhost:5173/audit/${props.shareToken}`;
+        const auditLink = `${process.env.FRONTEND_URL}/audit/${props.shareToken}`;
 
         await transporter.sendMail({
             from: `"Credex" <joshibhavya201206@gmail.com>`,
