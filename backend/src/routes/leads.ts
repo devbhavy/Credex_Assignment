@@ -1,7 +1,7 @@
 
 import express from "express";
 import { prisma } from "../services/prisma.js";
-import { sendConfirmationEmail } from "../services/resend.js";
+import { sendConfirmationEmail } from "../services/emailHandler.js";
 
 const leadsRouter = express.Router();
 
