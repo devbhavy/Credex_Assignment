@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { ToolCard } from "../components/card/ToolCard";
-import { AddTool } from "../components/card/AddTool";
+import { AddTool } from "../components/AddTool";
+import axios from "axios";
+import { useNavigate } from "react-router";
 
 export interface toolType {
   tool: string;
@@ -28,28 +30,45 @@ export default function CreateAudit() {
     needsAdminControls : false
   })
   const [visibility, setVisibility] = useState(false);
+  const navigate = useNavigate()
 
   const onAdd = (entry: toolType) => {
     setInput((prev) => [...prev, entry]);
   };
 
-  function handleSubmit(e){
+  async function handleSubmit(e){
     e.preventDefault();
-    console.log({...additionalInfo,tools:input});
+    const auditInput ={...additionalInfo,tools:input}
+    console.log(auditInput);
+    try{
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/app/audit/create`,auditInput);
+      navigate(`/audit/${response.data.auditId}?new=true`,{
+        replace : true
+      })
+
+      
+      
+    }catch(err){
+      alert("failed to generate audit some error occurred!")
+
+    }
+
 
   }
 
-  function handleAdditionalInfoChange(e){
+
+  function handleAdditionalInfoChange(e: any) {
+    const { name, value } = e.target;
+    
+    let parsed: string | number | boolean = value;
+    if (name === "teamSize") parsed = Number(value);
+    if (name === "needsAdminControls") parsed = value === "true";
+  
     setAdditonalInfo({
       ...additionalInfo,
-      [e.target.name]: e.target.value
-    })
+      [name]: parsed
+    });
   }
-
-  // useEffect(()=>{
-  //   console.log(input)
-  //   console.log(additionalInfo)
-  // },[input,additionalInfo])
 
   return (
     <div>
