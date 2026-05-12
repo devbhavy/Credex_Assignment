@@ -1,6 +1,5 @@
 import {OpenRouter} from "@openrouter/sdk"
 import dotenv from "dotenv"
-// import type { AuditResult } from "./auditEngine.js";
 import type { AuditResult } from "../lib/auditEngine.js";
 dotenv.config();
 
@@ -19,7 +18,7 @@ async function generateAiSummary(input:AuditResult):Promise<string>{
             messages: [
             {
                 role: 'system',
-                content: 'provided all info generate a 100 words personalined summary paragraph based on the audit.If the reason states that pricing data is not available suggest manual review for that tool',
+                content: 'provided all info generate a 100 words personalined summary paragraph based on the audit.If the reason states that pricing data is not available suggest manual review for that tool.Avoid using em dashes and ** to bold the text just give simple plain text as response.',
             },
             {
                 role : 'user',
