@@ -4,6 +4,7 @@ import { AddTool } from "../components/AddTool";
 import axios from "axios";
 import { useNavigate } from "react-router";
 import { CloseButton } from "../components/button/CloseButton";
+import { PendingPanel, Spinner } from "../components/InlineLoader";
 
 export interface toolType {
   tool: string;
@@ -31,6 +32,7 @@ export default function CreateAudit() {
     needsAdminControls : false
   })
   const [visibility, setVisibility] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate()
 
   const onAdd = (entry: toolType) => {
@@ -41,12 +43,14 @@ export default function CreateAudit() {
     e.preventDefault();
     const auditInput ={...additionalInfo,tools:input}
     console.log(auditInput);
+    setIsSubmitting(true);
     try{
       const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/app/audit/create`,auditInput);
       navigate(`/audit/${response.data.auditId}?new=true`,{
         replace : true
       })
     }catch(err){
+      setIsSubmitting(false);
       alert("failed to generate audit some error occurred!")
     }
   }
@@ -66,6 +70,11 @@ export default function CreateAudit() {
 
   return (
     <div className="mx-auto max-w-2xl px-5 py-12 pb-24">
+      {isSubmitting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/50 p-6 backdrop-blur-[2px]">
+          <PendingPanel message="Creating your audit…" />
+        </div>
+      )}
 
       
       <CloseButton/>
@@ -119,6 +128,7 @@ export default function CreateAudit() {
 
       <form
         onSubmit={handleSubmit}
+        aria-busy={isSubmitting}
         className="space-y-8 rounded-2xl border border-border bg-surface-raised p-6 shadow-sm"
       >
         <div>
@@ -218,9 +228,17 @@ export default function CreateAudit() {
         <div className="pt-2">
           <button
             type="submit"
-            className="w-full rounded-full bg-accent py-3.5 text-sm font-semibold text-ink shadow-sm transition-colors hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:w-auto sm:px-10"
+            disabled={isSubmitting}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent py-3.5 text-sm font-semibold text-ink shadow-sm transition-colors hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent enabled:cursor-pointer disabled:cursor-wait disabled:opacity-90 sm:w-auto sm:px-10"
           >
-            Generate audit
+            {isSubmitting ? (
+              <>
+                <Spinner size="sm" />
+                Generating…
+              </>
+            ) : (
+              "Generate audit"
+            )}
           </button>
         </div>
       </form>

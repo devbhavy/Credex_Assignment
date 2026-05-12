@@ -4,6 +4,8 @@ import { useState, type ChangeEvent, type FormEvent } from "react";
 
 import { useNavigate } from "react-router";
 
+import { PendingPanel, Spinner } from "./InlineLoader";
+
 
 
 interface leadInput{
@@ -40,7 +42,7 @@ export function AddLead({setVisibility,auditId} : {setVisibility : any,auditId:s
 
     const navigate = useNavigate();
 
-
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     function handleInput(e: ChangeEvent<HTMLInputElement>) {
 
@@ -62,6 +64,8 @@ export function AddLead({setVisibility,auditId} : {setVisibility : any,auditId:s
 
         e.preventDefault()
 
+        setIsSubmitting(true);
+
         try{
 
             const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/app/lead/capture`,leadData);
@@ -75,6 +79,8 @@ export function AddLead({setVisibility,auditId} : {setVisibility : any,auditId:s
 
 
         }catch(err){
+
+            setIsSubmitting(false);
 
             alert("Some error occurred!!");
 
@@ -100,9 +106,19 @@ export function AddLead({setVisibility,auditId} : {setVisibility : any,auditId:s
 
                 aria-labelledby="lead-dialog-title"
 
-                className="w-full max-w-md rounded-2xl border border-border bg-surface-raised p-6 shadow-xl"
+                className="relative w-full max-w-md rounded-2xl border border-border bg-surface-raised p-6 shadow-xl"
 
             >
+
+                {isSubmitting && (
+
+                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-surface-raised/90 p-6 backdrop-blur-[2px]">
+
+                        <PendingPanel message="Sending your report…" />
+
+                    </div>
+
+                )}
 
                 <div className="flex items-start justify-between gap-4">
 
@@ -128,7 +144,9 @@ export function AddLead({setVisibility,auditId} : {setVisibility : any,auditId:s
 
                         onClick={()=>setVisibility(false)}
 
-                        className="rounded-full border border-border bg-canvas px-3 py-1.5 text-sm text-muted transition-colors hover:bg-blush/50 hover:text-ink"
+                        disabled={isSubmitting}
+
+                        className="rounded-full border border-border bg-canvas px-3 py-1.5 text-sm text-muted transition-colors hover:bg-blush/50 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
 
                     >
 
@@ -138,7 +156,7 @@ export function AddLead({setVisibility,auditId} : {setVisibility : any,auditId:s
 
                 </div>
 
-                <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                <form onSubmit={handleSubmit} aria-busy={isSubmitting} className="mt-6 space-y-4">
 
                     <div>
 
@@ -162,7 +180,9 @@ export function AddLead({setVisibility,auditId} : {setVisibility : any,auditId:s
 
                             required
 
-                            className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink placeholder:text-muted/80 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+                            disabled={isSubmitting}
+
+                            className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink placeholder:text-muted/80 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-60"
 
                         />
 
@@ -190,7 +210,9 @@ export function AddLead({setVisibility,auditId} : {setVisibility : any,auditId:s
 
                             placeholder="Company or institution"
 
-                            className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink placeholder:text-muted/80 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+                            disabled={isSubmitting}
+
+                            className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink placeholder:text-muted/80 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-60"
 
                         />
 
@@ -218,7 +240,9 @@ export function AddLead({setVisibility,auditId} : {setVisibility : any,auditId:s
 
                             placeholder="Your role"
 
-                            className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink placeholder:text-muted/80 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+                            disabled={isSubmitting}
+
+                            className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink placeholder:text-muted/80 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-60"
 
                         />
 
@@ -230,11 +254,27 @@ export function AddLead({setVisibility,auditId} : {setVisibility : any,auditId:s
 
                             type="submit"
 
-                            className="w-full rounded-full bg-accent py-3 text-sm font-semibold text-ink transition-colors hover:bg-accent-hover"
+                            disabled={isSubmitting}
+
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent py-3 text-sm font-semibold text-ink transition-colors hover:bg-accent-hover disabled:cursor-wait disabled:opacity-90"
 
                         >
 
-                            Send my audit
+                            {isSubmitting ? (
+
+                                <>
+
+                                    <Spinner size="sm" />
+
+                                    Sending…
+
+                                </>
+
+                            ) : (
+
+                                "Send my audit"
+
+                            )}
 
                         </button>
 
