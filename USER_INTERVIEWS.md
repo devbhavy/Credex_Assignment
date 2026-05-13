@@ -8,13 +8,13 @@
 
 **Name:** Utsav Gupta
 **Role:** B.Tech Student + part-time freelance developer
-**Company stage:** Pre-company — working on side projects, learning startup economics through programs like Credex
+**Company stage:** Pre-company — working on side projects, learning WEB3 and Ai Developement
 
 **Context:** Uses AI tools actively for learning and project work. Has exposure to how startups think about cloud and AI costs through coursework and reading.
 
 **Direct Quotes:**
 
-> "We often subscribe to tools because of the hype but later realize we're not fully using them."
+> "Most people often subscribe to tools because of the hype but later realize they are not fully using them."
 
 > "Even in startups, companies can end up paying for multiple AI tools with overlapping features or unused cloud credits."
 
