@@ -49,7 +49,7 @@ export default function CreateAudit() {
       navigate(`/audit/${response.data.auditId}?new=true`,{
         replace : true
       })
-    }catch(err){
+    } catch {
       setIsSubmitting(false);
       alert("failed to generate audit some error occurred!")
     }

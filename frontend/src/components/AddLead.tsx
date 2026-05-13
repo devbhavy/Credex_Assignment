@@ -8,23 +8,22 @@ import { PendingPanel, Spinner } from "./InlineLoader";
 
 
 
-interface leadInput{
-
-    auditId: any;
-
-    email: any;
-
-    company: any;
-
-    role: any;
-
-
-
+interface leadInput {
+    auditId: string;
+    email: string;
+    company: string;
+    role: string;
 }
 
 
 
-export function AddLead({setVisibility,auditId} : {setVisibility : any,auditId:string}){
+export function AddLead({
+    setVisibility,
+    auditId,
+}: {
+    setVisibility: (visible: boolean) => void;
+    auditId: string;
+}) {
 
     const [leadData,setLeadData] = useState<leadInput>({
 
@@ -78,7 +77,7 @@ export function AddLead({setVisibility,auditId} : {setVisibility : any,auditId:s
 
 
 
-        }catch(err){
+        } catch {
 
             setIsSubmitting(false);
 
