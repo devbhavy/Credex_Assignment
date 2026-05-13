@@ -1,17 +1,15 @@
-import nodemailer from "nodemailer";
+import { BrevoClient } from "@getbrevo/brevo";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
-    host: "smtp-relay.brevo.com",
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.BREVO_USER,
-        pass: process.env.BREVO_PASS,
-    },
-});
+function getBrevo(): BrevoClient {
+    const apiKey = process.env.BREVO_PASS;
+    if (!apiKey) {
+        throw new Error("BREVO_API_KEY is required for transactional email");
+    }
+    return new BrevoClient({ apiKey });
+}
 
 interface PropType {
     email: string;
@@ -23,12 +21,13 @@ interface PropType {
 export async function sendConfirmationEmail(props: PropType) {
     try {
         const auditLink = `${process.env.FRONTEND_URL}/audit/${props.shareToken}`;
+        const brevo = getBrevo();
 
-        await transporter.sendMail({
-            from: `"Credex" <joshibhavya201206@gmail.com>`,
-            to: props.email,
-            subject: "Your AI Spend Audit",
-            html: `
+        const senderEmail =
+            process.env.BREVO_SENDER_EMAIL ?? "joshibhavya201206@gmail.com";
+        const senderName = process.env.BREVO_SENDER_NAME ?? "Credex";
+
+        const htmlContent = `
 <div style="font-family: Arial, sans-serif; line-height: 1.6;">
     <h2>AI Spend Audit Completed</h2>
 
@@ -51,11 +50,13 @@ export async function sendConfirmationEmail(props: PropType) {
     
         <p>
             You can view and share your audit here:
-        </p>`: `
+        </p>`
+            : `
         <p>
             Your current AI tooling setup already appears relatively optimized.
         </p>
-        `}
+        `
+    }
 
         <a
             href="${auditLink}"
@@ -80,7 +81,13 @@ export async function sendConfirmationEmail(props: PropType) {
         Credex AI Spend Audit
     </p>
 </div>
-`,
+`;
+
+        await brevo.transactionalEmails.sendTransacEmail({
+            sender: { email: senderEmail, name: senderName },
+            to: [{ email: props.email }],
+            subject: "Your AI Spend Audit",
+            htmlContent,
         });
 
         console.log("Email sent successfully");
