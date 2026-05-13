@@ -6,7 +6,8 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "dev": "tsc -b && node ./dist/src/index.js"
+    "build": "prisma generate && tsc -b",
+    "dev": "node ./dist/src/index.js"
   },
   "keywords": [],
   "author": "",
