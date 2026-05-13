@@ -2,14 +2,24 @@
 
 CredLens is a free audit tool for startup founders and engineering managers who want to know if they're overspending on AI tools. Input your stack, get an instant breakdown of savings opportunities, and share the report with your team.
 
-**Live URL:** []()  
+**Live URL:** [https://credex-assignment-teal.vercel.app/](https://credex-assignment-teal.vercel.app/)  
 **GitHub:** [https://github.com/devbhavy/Credex_Assignment](https://github.com/devbhavy/Credex_Assignment)
 
 ---
 
 ## Screenshots
 
+### Landing
 
+![CredLens landing page](screenshots/Landing.png)
+
+### Create audit
+
+![Create audit flow](screenshots/CreateAudit.png)
+
+### Audit result
+
+![Audit results view](screenshots/Audit_Result.png)
 
 ---
 
@@ -64,22 +74,34 @@ The Vite app runs at `http://localhost:5173` (default).
 
 **`backend/.env`**
 
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `PORT` | Yes | API port (e.g. `3000`). |
+| `DATABASE_URL` | Yes | PostgreSQL connection string (local or Supabase). |
+| `OPENROUTER_API_KEY` | Yes | OpenRouter key for the AI summary paragraph. |
+| `BREVO_PASS` | Yes | Brevo API key (used with `@getbrevo/brevo` for transactional email). |
+| `FRONTEND_URL` | Yes | Public frontend origin for email links; no trailing slash (e.g. `http://localhost:5173`). |
+| `BREVO_SENDER_EMAIL` | No | Verified sender address in Brevo; defaults if unset. |
+| `BREVO_SENDER_NAME` | No | Display name on outbound mail; defaults if unset. |
+
+Example (replace placeholders with your values):
+
 ```bash
 PORT=3000
 DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DATABASE
-
-# AI summary (OpenRouter)
 OPENROUTER_API_KEY=your_openrouter_key
-
-# Transactional email (Brevo SMTP)
-BREVO_USER=your_brevo_smtp_login
-BREVO_PASS=your_brevo_smtp_password
-
-# Used in outbound email links (no trailing slash)
+BREVO_PASS=your_brevo_api_key
 FRONTEND_URL=http://localhost:5173
+# Optional:
+# BREVO_SENDER_EMAIL=you@yourdomain.com
+# BREVO_SENDER_NAME=CredLens
 ```
 
 **`frontend/.env`**
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `VITE_BACKEND_URL` | Yes | Base URL of the running API (e.g. `http://localhost:3000`). |
 
 ```bash
 VITE_BACKEND_URL=http://localhost:3000
