@@ -621,3 +621,6 @@ export function runAudit(input: AuditInput): AuditResult {
     isAlreadyOptimal,
   };
 }
+
+
+export {PRICING};

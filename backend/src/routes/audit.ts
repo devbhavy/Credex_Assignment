@@ -1,5 +1,5 @@
 import express from "express"
-import { runAudit, type AuditInput } from "../lib/auditEngine.js";
+import { runAudit, type AuditInput,PRICING } from "../lib/auditEngine.js";
 import { generateAiSummary } from "../services/openrouter.js";
 import { prisma } from "../services/prisma.js";
 const auditRouter = express.Router();
@@ -26,7 +26,8 @@ auditRouter.post("/create",async function(req,res){
                 total_annual_saving : response.totalAnnualSaving,
                 is_already_optimal : response.isAlreadyOptimal,
                 summary : aiResponse,
-                needs_admin_controls : body.needsAdminControls
+                needs_admin_controls : body.needsAdminControls,
+                pricing_snapshot : JSON.stringify(PRICING)
             }
         });
         res.status(200).json({...response,summary : aiResponse,auditId : audit.id});

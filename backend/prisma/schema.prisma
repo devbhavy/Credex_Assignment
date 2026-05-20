@@ -21,6 +21,7 @@ model audits {
   created_at           DateTime? @default(now()) @db.Timestamptz(6)
   share_token          String?   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   needs_admin_controls Boolean?  @default(false)
+  pricing_snapshot     Json      @default("{}")
   leads                leads[]
 }
 
