@@ -22,6 +22,9 @@ model audits {
   share_token          String?   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   needs_admin_controls Boolean?  @default(false)
   pricing_snapshot     Json      @default("{}")
+  parent_audit_id      String?   @db.Uuid
+  audits               audits?   @relation("auditsToaudits", fields: [parent_audit_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_audits         audits[]  @relation("auditsToaudits")
   leads                leads[]
 }
 

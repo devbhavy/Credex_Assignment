@@ -45,6 +45,20 @@ export interface AuditResult {
 }
 
 
+// type Rec = {
+//   tool: string;
+//   checkType: string;
+//   monthlySaving: number;
+//   reason: string;
+//   [key: string]: unknown;
+// };
+ 
+type DiffRow =
+  | { status: "changed"; tool: string; old: ToolRecommendation; new: ToolRecommendation }
+  | { status: "added"; tool: string; new: ToolRecommendation }
+  | { status: "removed"; tool: string; old: ToolRecommendation }
+  | { status: "unchanged"; tool: string; rec: ToolRecommendation };
+
 
 const PRICING: Record<string, Record<string, number>> = {
   cursor: {
@@ -620,6 +634,33 @@ export function runAudit(input: AuditInput): AuditResult {
     totalAnnualSaving,
     isAlreadyOptimal,
   };
+}
+
+
+export function buildDiff(originalRecs: ToolRecommendation[], newRecs: ToolRecommendation[]): DiffRow[] {
+  const allTools = [...new Set([
+    ...originalRecs.map((r) => r.tool),
+    ...newRecs.map((r) => r.tool),
+  ])];
+ 
+  return allTools.map((tool): DiffRow => {
+    const oldRec = originalRecs.find((r) => r.tool === tool);
+    const newRec = newRecs.find((r) => r.tool === tool);
+ 
+    if (oldRec && newRec) {
+      const changed =
+        oldRec.checkType !== newRec.checkType ||
+        oldRec.monthlySaving !== newRec.monthlySaving ||
+        oldRec.reason !== newRec.reason;
+ 
+      return changed
+        ? { status: "changed", tool, old: oldRec, new: newRec }
+        : { status: "unchanged", tool, rec: newRec };
+    }
+ 
+    if (!oldRec && newRec) return { status: "added", tool, new: newRec };
+    return { status: "removed", tool, old: oldRec! };
+  });
 }
 
 
