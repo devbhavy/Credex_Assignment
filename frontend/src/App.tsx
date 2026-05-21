@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router"
 import Landing from "./pages/Landing"
 import CreateAudit from "./pages/CreateAudit"
 import ViewAudit from "./pages/ViewAudit"
+import DiffView from "./pages/Rerun"
 
 
 export default function App() {
@@ -12,6 +13,7 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/audit/create" element={<CreateAudit />} />
           <Route path="/audit/:token" element={<ViewAudit />} />
+          <Route path="/audit/:shareToken/rerun" element={<DiffView/>}></Route>
         </Routes>
       </BrowserRouter>
     </div>

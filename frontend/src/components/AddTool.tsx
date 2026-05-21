@@ -1,72 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import axios from "axios";
 
-const TOOL_PLANS: Record<string, { label: string; value: string }[]> = {
-  cursor: [
-    { label: "Hobby (Free)", value: "hobby" },
-    { label: "Pro ($20/seat)", value: "pro" },
-    { label: "Pro+ ($60/seat)", value: "pro_plus" },
-    { label: "Ultra ($200/seat)", value: "ultra" },
-    { label: "Teams ($40/seat)", value: "teams" },
-    { label: "Enterprise (Custom)", value: "enterprise" },
-  ],
-  github_copilot: [
-    { label: "Free", value: "free" },
-    { label: "Pro ($10/seat)", value: "pro" },
-    { label: "Pro+ ($39/seat)", value: "pro_plus" },
-    { label: "Business ($19/seat)", value: "business" },
-    { label: "Enterprise ($39/seat)", value: "enterprise" },
-  ],
-  claude: [
-    { label: "Free", value: "free" },
-    { label: "Pro ($20/seat)", value: "pro" },
-    { label: "Max 5x ($100/seat)", value: "max_5x" },
-    { label: "Max 20x ($200/seat)", value: "max_20x" },
-    { label: "Team Standard ($25/seat)", value: "team_standard" },
-    { label: "Team Premium ($100/seat)", value: "team_premium" },
-    { label: "Enterprise (Custom)", value: "enterprise" },
-  ],
-  chatgpt: [
-    { label: "Free", value: "free" },
-    { label: "Plus ($20/seat)", value: "plus" },
-    { label: "Team ($25/seat)", value: "team" },
-    { label: "Enterprise (Custom)", value: "enterprise" },
-  ],
-  anthropic_api: [
-    { label: "Pay as you go", value: "pay_as_you_go" },
-  ],
-  openai_api: [
-    { label: "Pay as you go", value: "pay_as_you_go" },
-  ],
-  gemini: [
-    { label: "Free", value: "free" },
-    { label: "Pro ($19.99/seat)", value: "pro" },
-    { label: "Ultra (Custom)", value: "ultra" },
-  ],
-  v0: [
-    { label: "Free", value: "free" },
-    { label: "Premium ($20/seat)", value: "premium" },
-    { label: "Team ($30/seat)", value: "team" },
-    { label: "Business ($100/seat)", value: "business" },
-    { label: "Enterprise (Custom)", value: "enterprise" },
-  ],
-  windsurf: [
-    { label: "Free", value: "free" },
-    { label: "Pro ($15/seat)", value: "pro" },
-    { label: "Teams ($35/seat)", value: "teams" },
-  ],
-};
-
-// fixed price per seat — used to auto-calculate monthly spend
-const PLAN_PRICING: Record<string, Record<string, number>> = {
+const FALLBACK_PRICING: Record<string, Record<string, number>> = {
   cursor:         { hobby: 0, pro: 20, pro_plus: 60, ultra: 200, teams: 40 },
-  github_copilot: { free: 0, pro: 10, pro_plus: 39, business: 19, enterprise: 39 },
+  github_copilot: { free: 0, pro: 10, pro_plus: 39, business: 19 },
   claude:         { free: 0, pro: 20, max_5x: 100, max_20x: 200, team_standard: 25, team_premium: 100 },
   chatgpt:        { free: 0, plus: 20, team: 25 },
   anthropic_api:  { pay_as_you_go: 0 },
   openai_api:     { pay_as_you_go: 0 },
   gemini:         { free: 0, pro: 19.99 },
   v0:             { free: 0, premium: 20, team: 30, business: 100 },
-  windsurf:       { free: 0, pro: 15, teams: 35 },
 };
 
 const TOOL_LABELS: Record<string, string> = {
@@ -78,10 +21,8 @@ const TOOL_LABELS: Record<string, string> = {
   openai_api: "OpenAI API",
   gemini: "Gemini",
   v0: "v0",
-  windsurf: "Windsurf",
 };
 
-// these tools have no fixed price — user must enter spend manually
 const API_TOOLS = new Set(["anthropic_api", "openai_api"]);
 
 export interface ToolEntry {
@@ -98,19 +39,43 @@ interface AddToolProps {
 }
 
 export function AddTool({ setVisibility, onAdd }: AddToolProps) {
+  const [pricing, setPricing] = useState<Record<string, Record<string, number>>>(FALLBACK_PRICING);
   const [selectedTool, setSelectedTool] = useState("");
   const [selectedPlan, setSelectedPlan] = useState("");
   const [seats, setSeats] = useState(1);
-  const [apiSpend, setApiSpend] = useState(0); // only for API tools
+  const [apiSpend, setApiSpend] = useState(0);
   const [usageFrequency, setUsageFrequency] = useState<"never" | "sometimes" | "frequently">("never");
   const [error, setError] = useState("");
 
-  const plans = selectedTool ? TOOL_PLANS[selectedTool] ?? [] : [];
+  // Fetch live pricing from backend on mount
+  useEffect(() => {
+    axios
+      .get<{ pricing: Record<string, Record<string, number>> }>(
+        `${import.meta.env.VITE_BACKEND_URL}/app/admin/get-pricing`
+      )
+      .then((res) => setPricing(res.data.pricing))
+      .catch(() => {
+        // silently fall back to hardcoded pricing
+        setPricing(FALLBACK_PRICING);
+      });
+  }, []);
+
+  // Build plans dropdown dynamically from fetched pricing
+  const plans = useMemo(() => {
+    if (!selectedTool || !pricing[selectedTool]) return [];
+    return Object.entries(pricing[selectedTool]).map(([value, price]) => ({
+      value,
+      label: price === 0
+        ? `${value} (Free)`
+        : `${value} ($${price}/seat)`,
+      price,
+    }));
+  }, [selectedTool, pricing]);
+
   const isApiTool = API_TOOLS.has(selectedTool);
 
-  // auto-calculate for fixed-price tools
   const pricePerSeat = selectedTool && selectedPlan
-    ? PLAN_PRICING[selectedTool]?.[selectedPlan] ?? 0
+    ? pricing[selectedTool]?.[selectedPlan] ?? 0
     : 0;
   const calculatedSpend = isApiTool ? apiSpend : pricePerSeat * seats;
 
@@ -169,7 +134,7 @@ export function AddTool({ setVisibility, onAdd }: AddToolProps) {
           </select>
         </div>
 
-        {/* Plan Select */}
+        {/* Plan Select — built dynamically from fetched pricing */}
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-ink">Plan</label>
           <select
@@ -199,8 +164,8 @@ export function AddTool({ setVisibility, onAdd }: AddToolProps) {
           />
         </div>
 
+        {/* Monthly Spend */}
         {isApiTool ? (
-
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-ink">
               Avg monthly spend ($)
@@ -218,7 +183,6 @@ export function AddTool({ setVisibility, onAdd }: AddToolProps) {
             </p>
           </div>
         ) : (
-          // Fixed price tools — auto calculated, read only
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-ink">Monthly spend</label>
             <div className="flex items-center justify-between rounded-xl border border-border bg-accent-muted/50 px-3 py-2.5 text-sm text-ink">
