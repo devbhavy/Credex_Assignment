@@ -3,6 +3,7 @@ const adminRouter = express.Router();
 import { PRICING } from "../lib/auditEngine.js";
 import { prisma } from "../services/prisma.js";
 import { detectPricingChanges } from "../lib/detectPricingChanges.js";
+import { sendPricingNotificationEmails, type LeadInfo } from "../services/emailHandler.js";
 
 adminRouter.get("/get-pricing",function(req,res){
     return res.status(200).json({
@@ -59,7 +60,12 @@ adminRouter.get("/detect-changes",async function(req,res){
 
         for(const audit of audits){
             const snapshot = JSON.parse(audit.pricing_snapshot as string);
-            const changes = detectPricingChanges(snapshot,PRICING);
+
+            const tools = typeof audit.tools ==="string"?JSON.parse(audit.tools):audit.tools
+            const usedTools = tools.map(
+              (t: any) => t.tool
+            );
+            const changes = detectPricingChanges(snapshot,PRICING,usedTools);
 
             if(changes.length>0){
                 affected.push({
@@ -70,12 +76,54 @@ adminRouter.get("/detect-changes",async function(req,res){
             }
         }
 
-        return res.status(200).json({
-            totalAudits : audits.length,
-            affectedAudits : affected.length,
-            affected
-        })
+        if (affected.length === 0) {
+          return res.status(200).json({ msg: "no affected audits, no emails sent" });
+        }
         
+        const affectedIds = affected.map((data)=>data.auditId);
+        
+        const leads : LeadInfo[] = await prisma.leads.findMany({
+          where :{
+            audit_id : {in : affectedIds}
+          },
+          select : {
+            email : true,
+            audit_id : true,
+            company : true
+          }
+        })
+
+        
+        const {emailsSent,errors}  = await sendPricingNotificationEmails(affected,leads)
+
+        res.status(200).json({
+          emailsSent,errors
+        })
+
+        // const byEmail: Record<string,{ email: string; company: string | null; audits: typeof affected }> = {};
+ 
+        // for (const lead of leads) {
+        //   const email = lead.email!;
+        //   const auditData = affected.find((a) => a.auditId === lead.audit_id);
+        //   if (!auditData) continue;
+    
+        //   if (!byEmail[email]) {
+        //     byEmail[email] = { email, company: lead.company, audits: [] };
+        //   }
+        //   byEmail[email].audits.push(auditData);
+        // }
+
+        // console.log(byEmail);
+
+        
+
+
+
+        // return res.status(200).json({
+        //   byEmail
+        // })
+
+      
     }catch(err){
         return res.status(400).json({
             msg : "Some error occurred fetching data"
